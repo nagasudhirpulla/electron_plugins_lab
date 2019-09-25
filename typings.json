@@ -1,0 +1,6 @@
+{
+  "globalDependencies": {
+    "core-js": "registry:dt/core-js#0.9.0+20170324193834",
+    "electron": "registry:dt/electron#1.4.8+20170316233216"
+  }
+}
