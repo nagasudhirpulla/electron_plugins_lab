@@ -3,7 +3,7 @@ import path from 'path';
 import { existsSync } from 'fs';
 import { readFileAsync, writeFileAsync } from "./fileUtils";
 
-let adapters_list: { [key: string]: {} } = {};
+let adapters_list: { [key: string]: AdapterManifest } = {};
 const adaptersListFilename: string = 'adapter_register.json';
 
 export const persistAdapters = async () => {

@@ -1,6 +1,6 @@
 {
     "entry": "app1.exe",
-    "name": "CustomData",
+    "name": "CustomData2",
     "app_id": "app_id2",
     "out_types": [
         "timeseries"

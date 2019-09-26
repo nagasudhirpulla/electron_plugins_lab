@@ -108,10 +108,14 @@ const copyPluginFolder = async (pluginExternFoldPath: string, manifestJson: Adap
 
 const isPluginNamePresent = (pluginName: string): boolean => {
     const adapters = getAdapters();
-    if (Object.keys(adapters).includes(pluginName)) {
-        return true;
+    let pluginNameExists = false;
+    for (const app_id of Object.keys(adapters)) {
+        if (adapters[app_id].name == pluginName) {
+            pluginNameExists = true;
+            break;
+        }
     }
-    return false;
+    return pluginNameExists;
 }
 
 const registerPlugin = async (): Promise<any> => {
@@ -125,7 +129,7 @@ const registerPlugin = async (): Promise<any> => {
     if (manifestJson == null) {
         return null;
     }
-    // todo check if the plugin name already exists
+    // check if the plugin name already exists
     const pluginExists = isPluginNamePresent(manifestJson.name);
     if (pluginExists == true) {
         console.log(`plugin name ${manifestJson.name} already exists, hence plugin installation is aborted`);
