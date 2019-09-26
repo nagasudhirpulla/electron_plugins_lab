@@ -5,9 +5,9 @@ import { spawn, ChildProcess } from "child_process";
 import path from 'path';
 import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
-import { readFileAsync, copyFolderAsync, ensureFolderAsync } from './fileUtils';
+import { readFileAsync, copyFolderAsync, ensureFolderAsync, removeFolderAsync } from './fileUtils';
 import { AdapterManifest } from './def_manifest';
-import { registerAdapter, getAdapter, getAdapters, initAdapters } from './adapterState';
+import { registerAdapter, getAdapter, getAdapters, initAdapters, unRegisterAdapter } from './adapterState';
 const showOpenDialog = require('electron').dialog.showOpenDialog;
 let win: BrowserWindow;
 
@@ -141,6 +141,22 @@ const registerPlugin = async (): Promise<any> => {
     }
     // add the plugin attributes to the plugins app state and the json file for persistence
     await registerAdapter(manifestJson);
+}
+
+const unRegisterPlugin = async (adapterId: string): Promise<any> => {
+    // refresh adapters list from file
+    const adapters = await initAdapters();
+    // check if adapterId exists in the app registry object
+    if (!Object.keys(adapters).includes(adapterId)) {
+        console.log(`${adapterId} is not present in adapters registry of this app`);
+    } else {
+        // remove app_id object from app registry object
+        unRegisterAdapter(adapterId);
+    }
+    // delete the app_id folder
+    const pluginFolderPath = join(getExesFolder(), adapterId);
+    const isSuccess = await removeFolderAsync(pluginFolderPath);
+    console.log(`successfully uninstalled plugin ${adapterId}`);
 }
 
 const onAppReady = async () => {

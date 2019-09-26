@@ -27,6 +27,11 @@ export const registerAdapter = async (manifestObj: AdapterManifest) => {
     await persistAdapters();
 };
 
+export const unRegisterAdapter = async (adapterId: string) => {
+    delete adapters_list[adapterId];
+    await persistAdapters();
+};
+
 export const getAdapter = (key: string) => {
     if (!['number', 'string'].includes(typeof key)) {
         return null;

@@ -1,6 +1,7 @@
-import { readFile, writeFile } from 'fs';
+import { readFile, writeFile, stat } from 'fs';
 var ncp = require('ncp').ncp;
 var mkdirp = require('mkdirp');
+var rimraf = require("rimraf");
 
 export const readFileAsync = function (filename: string) {
     return new Promise(function (resolve, reject) {
@@ -48,3 +49,26 @@ export const copyFolderAsync = function (srcFolderName: string, destFolderName: 
         });
     });
 };
+
+export const removeFolderAsync = function (folderPath: string): Promise<boolean> {
+    return new Promise(function (resolve, reject) {
+        stat(folderPath, function (err) {
+            if (!err) {
+                console.log('file or directory exists');
+                rimraf(folderPath, function (err: any) {
+                    if (err) {
+                        console.log(err);
+                        reject(err);
+                    }
+                    console.log(`Successfully deleted folder ${folderPath}`);
+                    resolve(true);
+                });
+            }
+            else if (err.code === 'ENOENT') {
+                // console.log('file or directory does not exist');
+                resolve(true);
+            }
+        });
+    });
+}
+
