@@ -25,6 +25,10 @@ const createWindow = () => {
     });
 };
 
+const getExesFolder = ():string=>{
+    return path.resolve(path.dirname(process.mainModule.filename), 'adapters')
+}
+
 const onAppReady = async () => {
     // createWindow();
     // const opt: OpenDialogOptions = { properties: ['openDirectory'] };
@@ -84,7 +88,12 @@ const onAppReady = async () => {
         return;
     }
 
-    
+    const pluginFolderPath = join(getExesFolder(), manifestJson.app_id);
+    console.log(`plugin folder path = ${pluginFolderPath}`);
+    // check if pluginFolderPath exists already in the adapter exes Location
+    if (existsSync(pluginFolderPath)) {
+        console.log('pluginFolderPath already present');
+    }
 };
 
 app.on("ready", onAppReady);
