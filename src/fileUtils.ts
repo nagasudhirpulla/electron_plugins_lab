@@ -1,4 +1,6 @@
 import { readFile, writeFile } from 'fs';
+var ncp = require('ncp').ncp;
+var mkdirp = require('mkdirp');
 
 export const readFileAsync = function (filename: string) {
     return new Promise(function (resolve, reject) {
@@ -18,6 +20,31 @@ export const writeFileAsync = function (filename: string, contents: string): Pro
                 reject(err);
             else
                 resolve(true);
+        });
+    });
+};
+
+
+export const ensureFolderAsync = function (folderName: string): Promise<boolean> {
+    return new Promise(function (resolve, reject) {
+        mkdirp(folderName, function (err: any) {
+            if (err) {
+                return reject(err);
+            }
+            resolve(true);
+        });
+    });
+};
+
+
+export const copyFolderAsync = function (srcFolderName: string, destFolderName: string): Promise<boolean> {
+    ncp.limit = 16;
+    return new Promise(function (resolve, reject) {
+        ncp(srcFolderName, destFolderName, function (err: any) {
+            if (err) {
+                return reject(err);
+            }
+            resolve(true);
         });
     });
 };

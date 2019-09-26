@@ -4,11 +4,11 @@ import { ipcMain } from 'electron';
 import { spawn, ChildProcess } from "child_process";
 import path from 'path';
 import { join } from 'path';
-import { existsSync } from 'fs';
-import { readFileAsync } from './fileUtils';
+import { existsSync, mkdirSync } from 'fs';
+import { readFileAsync, copyFolderAsync, ensureFolderAsync } from './fileUtils';
 import { AdapterManifest } from './def_manifest';
+import { registerAdapter, getAdapter, getAdapters, initAdapters } from './adapterState';
 const showOpenDialog = require('electron').dialog.showOpenDialog;
-
 let win: BrowserWindow;
 
 const createWindow = () => {
@@ -25,47 +25,31 @@ const createWindow = () => {
     });
 };
 
-const getExesFolder = ():string=>{
+const getExesFolder = (): string => {
     return path.resolve(path.dirname(process.mainModule.filename), 'adapters')
 }
 
-const onAppReady = async () => {
-    // createWindow();
-    // const opt: OpenDialogOptions = { properties: ['openDirectory'] };
-    // showOpenDialog(opt, (folNames) => {
-    //     console.log(`selected folders = ${folNames}`);
-    //     if (folNames.length == 0) {
-    //         return;
-    //     }
-    //     const selectedFolder = folNames[0];
-    // });
-
+const getExtPluginFoldPathFromDialog = async (): Promise<string> => {
     const dialogRes = await showOpenDialog({
         properties: ['openDirectory'],
-        title: 'Open Dashboard File'
+        title: 'Select New Plugin Folder'
     }) as any;
-    let openFoldName: string = null;
-    console.log(dialogRes);
+    let pluginExternFoldPath: string = null;
+    // console.log(dialogRes);
     if (dialogRes.canceled == true) {
-        return;
+        return null;
     }
     else if (dialogRes.filePaths.length == 0) {
-        return;
+        return null;
     }
     else {
-        openFoldName = dialogRes.filePaths[0];
+        pluginExternFoldPath = dialogRes.filePaths[0];
     }
-    console.log(openFoldName);
-    // check if manifest file exists
-    const manifestPath = join(openFoldName, 'manifest.json');
-    if (!existsSync(manifestPath)) {
-        console.log('manifest file not present');
-        return;
-    }
-    // read the manifest JSON from file
-    let manifestJson = JSON.parse(await readFileAsync(manifestPath) as string) as any as AdapterManifest;
-    console.log(manifestJson);
+    // console.log(pluginExternFoldPath);
+    return pluginExternFoldPath
+};
 
+const ensureManifestAttrs = async (manifestJson: AdapterManifest): Promise<AdapterManifest> => {
     // ensure manifest json attributes
     let absentAttrs: string[] = []
     if (manifestJson.app_id == undefined) {
@@ -85,15 +69,80 @@ const onAppReady = async () => {
     }
     if (absentAttrs.length > 0) {
         console.log(`${absentAttrs.join(', ')} are absent in manifest json file`);
-        return;
+        return null;
     }
+    return manifestJson;
+};
 
+const getManifestFromExternPlugin = async (pluginExternFoldPath: string): Promise<AdapterManifest> => {
+    // check if manifest file exists
+    const manifestPath = join(pluginExternFoldPath, 'manifest.json');
+    if (!existsSync(manifestPath)) {
+        console.log('manifest file not present');
+        return null;
+    }
+    // read the manifest JSON from file
+    let manifestJson = JSON.parse(await readFileAsync(manifestPath) as string) as any as AdapterManifest;
+    // console.log(manifestJson);
+    return await ensureManifestAttrs(manifestJson);
+};
+
+const copyPluginFolder = async (pluginExternFoldPath: string, manifestJson: AdapterManifest): Promise<string> => {
+    // copy plugin folder to app plugins directory
     const pluginFolderPath = join(getExesFolder(), manifestJson.app_id);
     console.log(`plugin folder path = ${pluginFolderPath}`);
-    // check if pluginFolderPath exists already in the adapter exes Location
-    if (existsSync(pluginFolderPath)) {
-        console.log('pluginFolderPath already present');
+    // // check if pluginFolderPath exists already in the adapter exes Location
+    // if (existsSync(pluginFolderPath)) {
+    //     console.log('pluginFolderPath already present');
+    // }
+    try {
+        const ensFoldRes = await ensureFolderAsync(pluginFolderPath);
+        const foldCopyRes = await copyFolderAsync(pluginExternFoldPath, pluginFolderPath);
+        console.log('Plugin Folder copy completed!');
+    } catch (err) {
+        console.log(err);
+        return null
     }
+    return pluginFolderPath;
+}
+
+const isPluginNamePresent = (pluginName: string): boolean => {
+    const adapters = getAdapters();
+    if (Object.keys(adapters).includes(pluginName)) {
+        return true;
+    }
+    return false;
+}
+
+const registerPlugin = async (): Promise<any> => {
+    // get the user selected folder path
+    const pluginExtFoldPath = await getExtPluginFoldPathFromDialog();
+    if (pluginExtFoldPath == null) {
+        return null;
+    }
+    // read the manifest of the selected folder
+    const manifestJson = await getManifestFromExternPlugin(pluginExtFoldPath);
+    if (manifestJson == null) {
+        return null;
+    }
+    // todo check if the plugin name already exists
+    const pluginExists = isPluginNamePresent(manifestJson.name);
+    if (pluginExists == true) {
+        console.log(`plugin name ${manifestJson.name} already exists, hence plugin installation is aborted`);
+        return null;
+    }
+    const pluginFolderPath: string = await copyPluginFolder(pluginExtFoldPath, manifestJson);
+    if (pluginFolderPath == null) {
+        return null;
+    }
+    // add the plugin attributes to the plugins app state and the json file for persistence
+    await registerAdapter(manifestJson);
+}
+
+const onAppReady = async () => {
+    // createWindow();
+    const adaptersObj = await initAdapters();
+    await registerPlugin();
 };
 
 app.on("ready", onAppReady);
