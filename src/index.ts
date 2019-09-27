@@ -143,6 +143,31 @@ const registerPlugin = async (): Promise<any> => {
     await registerAdapter(manifestJson);
 }
 
+const updatePlugin = async (): Promise<any> => {
+    // get the user selected folder path
+    const pluginExtFoldPath = await getExtPluginFoldPathFromDialog();
+    if (pluginExtFoldPath == null) {
+        return null;
+    }
+    // read the manifest of the selected folder
+    const manifestJson = await getManifestFromExternPlugin(pluginExtFoldPath);
+    if (manifestJson == null) {
+        return null;
+    }
+    // abort update if plugin does not exist
+    const pluginExists = isPluginNamePresent(manifestJson.name);
+    if (pluginExists == false) {
+        console.log(`plugin name ${manifestJson.name} does not exist, hence we cant update plugin`);
+        return null;
+    }
+    const pluginFolderPath: string = await copyPluginFolder(pluginExtFoldPath, manifestJson);
+    if (pluginFolderPath == null) {
+        return null;
+    }
+    // add the plugin attributes to the plugins app state and the json file for persistence
+    await registerAdapter(manifestJson);
+}
+
 const unRegisterPlugin = async (adapterId: string): Promise<any> => {
     // refresh adapters list from file
     const adapters = await initAdapters();
@@ -162,7 +187,9 @@ const unRegisterPlugin = async (adapterId: string): Promise<any> => {
 const onAppReady = async () => {
     // createWindow();
     const adaptersObj = await initAdapters();
-    await registerPlugin();
+    // await updatePlugin();
+    // await registerPlugin();
+    await unRegisterPlugin('app_id2');
 };
 
 app.on("ready", onAppReady);
