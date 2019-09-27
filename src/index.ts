@@ -166,6 +166,7 @@ const updatePlugin = async (): Promise<any> => {
     }
     // add the plugin attributes to the plugins app state and the json file for persistence
     await registerAdapter(manifestJson);
+    console.log(`successfully updated plugin ${manifestJson.app_id}`);
 }
 
 const unRegisterPlugin = async (adapterId: string): Promise<any> => {
@@ -187,9 +188,9 @@ const unRegisterPlugin = async (adapterId: string): Promise<any> => {
 const onAppReady = async () => {
     // createWindow();
     const adaptersObj = await initAdapters();
-    // await updatePlugin();
     // await registerPlugin();
-    await unRegisterPlugin('app_id2');
+    await updatePlugin();
+    // await unRegisterPlugin('app_id2');
 };
 
 app.on("ready", onAppReady);
