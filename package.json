@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^6.0.10",
+    "electron": "^18.3.7",
     "mkdirp": "^0.5.1",
     "ncp": "^2.0.0",
     "rimraf": "^3.0.0",
